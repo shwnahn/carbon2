@@ -1,5 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     function formatNumber(num) {
+        if (num === undefined || num === null) {
+            return '0';
+        }
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
 
@@ -372,19 +375,19 @@ document.addEventListener('DOMContentLoaded', () => {
             // 다른 이벤트의 영향을 해제하는 로직 추가
         }
     }
+    skipButton.addEventListener('click', skipTurnOrEvent);
+
+    function skipTurnOrEvent() {
+        if (eventSection.classList.contains('active')) {
+            // 이벤트 선택을 건너뛰기
+            eventSection.style.display = 'none';
+            eventSection.classList.remove('active');
+            nextTurn();
+        } else {
+            // 현재 팀의 턴을 건너뛰기
+            nextTeam();
+        }
+    }
 });
 
-const skipButton = document.getElementById('skip-button');
-skipButton.addEventListener('click', skipTurnOrEvent);
 
-function skipTurnOrEvent() {
-    if (eventSection.classList.contains('active')) {
-        // 이벤트 선택을 건너뛰기
-        eventSection.style.display = 'none';
-        eventSection.classList.remove('active');
-        nextTurn();
-    } else {
-        // 현재 팀의 턴을 건너뛰기
-        nextTeam();
-    }
-}
