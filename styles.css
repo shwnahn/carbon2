@@ -1,7 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+@font-face {
+    font-family: 'Pretendard-Regular';
+    src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff');
+    font-weight: 400;
+    font-style: normal;
+}
 
 body {
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: 'Pretendard-Regular', sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -16,15 +22,31 @@ body {
 
 #game-settings {
     text-align: center;
-    background-color: #fff;
+    background-color: rgba(255, 255, 255, 0.8); /* 반투명 흰색 배경 */
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    width: 95%;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2); /* 약간의 그림자 */
+    width: 96%;
 }
 
+.game_status {
+    background-color: rgba(0, 229, 255, 0.1); /* 하늘 배경 (투명도) */
+    padding: 10px 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    display: inline-block;
+    width:95%
+}
+
+.game_status div {
+    font-size: 1.5em; /* 폰트 크기 확대 */
+    margin: 5px 0;
+    font-weight: bold;
+}
+
+
 #current-turn {
-    font-size: 1.5em;
+    font-size: 3em;
     margin-bottom: 20px;
 }
 
@@ -49,8 +71,12 @@ body {
 }
 
 .team h2 {
-    font-size: 1.5em;
+    font-size: 2rem;
     margin-bottom: 10px;
+}
+
+.team_status{
+    font-size: 1.5rem;
 }
 
 .team div {
