@@ -13,6 +13,16 @@
             <div id="current-turn"><span id="turn-number">1</span>번째 턴</div>
             <div id="carbon-credit-price">정부 온실가스 배출권: 개당 <span id="credit-price">50,000</span>원</div>
         </div>
+        <div id="event-section" style="display:none;">
+            <h2>이벤트 선택</h2>
+            <button class="event-button" data-event="1">1</button>
+            <button class="event-button" data-event="2">2</button>
+            <button class="event-button" data-event="3">3</button>
+            <button class="event-button" data-event="4">4</button>
+            <button class="event-button" data-event="5">5</button>
+            <button class="event-button" data-event="6">6</button>
+            <button class="event-button" data-event="7">7</button>
+        </div>
         <div id="teams">
             <div class="team" data-team="1">
                 <h2>1조</h2>
@@ -99,6 +109,12 @@
                     <button class="submit-transaction">제출</button>
                 </div>
             </div>
+        </div>
+    </div>
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal()">&times;</span>
+            <p id="modal-message"></p>
         </div>
     </div>
     <script src="script.js"></script>
