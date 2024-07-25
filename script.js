@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 숫자를 쉼표로 구분하여 표시하는 함수
     function formatNumber(num) {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
@@ -22,13 +21,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalMessage = document.getElementById('modal-message');
     const closeButton = document.querySelector('.close-button');
     const gameStatus = document.querySelector('.game_status');
+    const skipButton = document.getElementById('skip-button'); // 추가된 부분
 
     closeButton.addEventListener('click', closeModal);
+    skipButton.addEventListener('click', skipTurnOrEvent); // 추가된 부분
 
     let currentTurn = parseInt(localStorage.getItem('currentTurn')) || 1;
     let currentTeamIndex = parseInt(localStorage.getItem('currentTeamIndex')) || 0;
     let creditPrice = parseInt(localStorage.getItem('creditPrice')) || 50000;
     let lastEvent = localStorage.getItem('lastEvent') || 'None';
+    let lastEventId = parseInt(localStorage.getItem('lastEventId')) || 0;
+    let efficiencyCosts = JSON.parse(localStorage.getItem('efficiencyCosts')) || [50000, 100000, 200000]; // 초기 배출효율 높이기 가격
 
     turnNumberElement.textContent = currentTurn;
     creditPriceElement.textContent = formatNumber(creditPrice);
@@ -65,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let carbonCredits = parseInt(localStorage.getItem(`team${teamId}-carbonCredits`)) || 10;
         let carbonEfficiency = parseInt(localStorage.getItem(`team${teamId}-carbonEfficiency`)) || 4;
         let productPrice = parseInt(localStorage.getItem(`team${teamId}-productPrice`)) || 200000;
+        let efficiencyCost = parseInt(localStorage.getItem(`team${teamId}-efficiencyCost`)) || efficiencyCosts[carbonEfficiency - 1];
 
         moneyElement.textContent = formatNumber(money);
         carbonCreditsElement.textContent = carbonCredits;
@@ -94,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (carbonCredits >= carbonEfficiency) {
                 carbonCredits -= carbonEfficiency;
                 money += productPrice;
-                updateTeamData(teamId, money, carbonCredits, carbonEfficiency, productPrice);
+                updateTeamData(teamId, money, carbonCredits, carbonEfficiency, productPrice, efficiencyCost);
                 nextTeam();
             } else {
                 showModal("온실가스 배출권이 부족해요!");
@@ -102,25 +106,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         improveEfficiencyButton.addEventListener('click', () => {
-            let cost = 0;
-            if (carbonEfficiency == 4) {
-                cost = 50000;
-            } else if (carbonEfficiency == 3) {
-                cost = 100000;
-            } else if (carbonEfficiency == 2) {
-                cost = 200000;
-            }
-
-            if (money >= cost && carbonEfficiency > 1) {
-                money -= cost;
+            if (money >= efficiencyCost && carbonEfficiency > 1) {
+                money -= efficiencyCost;
                 carbonEfficiency -= 1;
-                updateTeamData(teamId, money, carbonCredits, carbonEfficiency, productPrice);
+                efficiencyCost = efficiencyCosts[carbonEfficiency - 1] || 0;
+                updateTeamData(teamId, money, carbonCredits, carbonEfficiency, productPrice, efficiencyCost);
                 nextTeam();
             } else {
                 if (carbonEfficiency <= 1) {
                     showModal("탄소 배출효율을 더 이상 높일 수 없습니다!");
                 } else {
-                    showModal(`돈이 부족해요! (필요한 돈: ${formatNumber(cost)}원)`);
+                    showModal(`돈이 부족해요! (필요한 돈: ${formatNumber(efficiencyCost)}원)`);
                 }
             }
         });
@@ -140,11 +136,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!isNaN(amount) && !isNaN(price) && amount > 0 && price > 0) {
                 if (action === 'buy') {
-                    const totalCost = amount * creditPrice; // 정부에서의 탄소배출권 가격
-                    if (money >= totalCost && amount <= 10) {
-                        money -= totalCost;
+                    const totalCost = amount * price;
+                    const teamMoney = parseInt(localStorage.getItem(`team${team.dataset.team}-money`)) || 100000;
+                    if (teamMoney >= totalCost && amount <= 10) {
+                        let money = teamMoney - totalCost;
                         carbonCredits += amount;
-                        updateTeamData(teamId, money, carbonCredits, carbonEfficiency, productPrice);
+                        updateTeamData(team.dataset.team, money, carbonCredits, carbonEfficiency, productPrice, efficiencyCost);
                         nextTeam();
                     } else {
                         if (amount > 10) {
@@ -155,9 +152,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } else if (action === 'sell') {
                     if (carbonCredits >= amount) {
+                        let money = parseInt(localStorage.getItem(`team${team.dataset.team}-money`)) || 100000;
                         money += amount * price;
                         carbonCredits -= amount;
-                        updateTeamData(teamId, money, carbonCredits, carbonEfficiency, productPrice);
+                        updateTeamData(team.dataset.team, money, carbonCredits, carbonEfficiency, productPrice, efficiencyCost);
                     } else {
                         showModal("온실가스 배출권이 부족해요!");
                     }
@@ -168,11 +166,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        function updateTeamData(teamId, money, carbonCredits, carbonEfficiency, productPrice) {
+        function updateTeamData(teamId, money, carbonCredits, carbonEfficiency, productPrice, efficiencyCost) {
             localStorage.setItem(`team${teamId}-money`, money);
             localStorage.setItem(`team${teamId}-carbonCredits`, carbonCredits);
             localStorage.setItem(`team${teamId}-carbonEfficiency`, carbonEfficiency);
             localStorage.setItem(`team${teamId}-productPrice`, productPrice);
+            localStorage.setItem(`team${teamId}-efficiencyCost`, efficiencyCost);
 
             moneyElement.textContent = formatNumber(money);
             carbonCreditsElement.textContent = carbonCredits;
@@ -212,19 +211,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function nextTeam() {
-        if (currentTeamIndex === teams.length - 1) {
-            teams.forEach((team) => {
-                team.classList.remove('active'); // 모든 팀에서 활성화 클래스 제거
-            });
-            eventSection.style.display = 'block'; // 이벤트 선택 섹션 표시
-            eventSection.classList.add('active'); // 이벤트 섹션에 활성화 클래스 추가
-            currentTeamIndex = 0;  // 팀 인덱스를 첫 팀으로 리셋
-        } else {
-            currentTeamIndex++;
-            localStorage.setItem('currentTeamIndex', currentTeamIndex);
-            updateTeamButtonsVisibility();
+        currentTeamIndex++;
+        if (currentTeamIndex >= teams.length) {
+            currentTeamIndex = 0;
+            eventSection.style.display = 'block';
+            eventSection.classList.add('active');
         }
+        localStorage.setItem('currentTeamIndex', currentTeamIndex);
+        updateTeamButtonsVisibility();
     }
+    // nextTurn 함수 수정
     function nextTurn() {
         currentTeamIndex = 0;
         currentTurn++;
@@ -240,7 +236,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function handleEvent(eventId) {
-    
         lastEventId = eventId; // 이벤트 ID 저장
         teams.forEach((team) => {
             const teamId = team.dataset.team;
@@ -248,23 +243,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const carbonCreditsElement = team.querySelector('.carbon-credits');
             const carbonEfficiencyElement = team.querySelector('.carbon-efficiency');
             const productPriceElement = team.querySelector('.product-price');
-
+    
             let money = parseInt(localStorage.getItem(`team${teamId}-money`)) || 100000;
             let carbonCredits = parseInt(localStorage.getItem(`team${teamId}-carbonCredits`)) || 10;
             let carbonEfficiency = parseInt(localStorage.getItem(`team${teamId}-carbonEfficiency`)) || 4;
             let productPrice = parseInt(localStorage.getItem(`team${teamId}-productPrice`)) || 200000;
-
+    
             function updateTeamData(teamId, money, carbonCredits, carbonEfficiency, productPrice) {
                 localStorage.setItem(`team${teamId}-money`, money);
                 localStorage.setItem(`team${teamId}-carbonCredits`, carbonCredits);
                 localStorage.setItem(`team${teamId}-carbonEfficiency`, carbonEfficiency);
                 localStorage.setItem(`team${teamId}-productPrice`, productPrice);
-
+    
                 moneyElement.textContent = formatNumber(money);
                 carbonCreditsElement.textContent = carbonCredits;
                 carbonEfficiencyElement.textContent = carbonEfficiency;
                 productPriceElement.textContent = formatNumber(productPrice);
             }
+    
             switch(eventId) {
                 case 1:
                     creditPrice *= 2;
@@ -308,11 +304,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
                 case 5:
                     teams.forEach((team, index) => {
-                        let productPrice = parseInt(localStorage.getItem(`team${team.dataset.team}-productPrice`)) || 200000;
-                        productPrice = 300000;
-                        localStorage.setItem(`team${team.dataset.team}-productPrice`, productPrice);
-                        const productPriceElement = team.querySelector('.product-price');
-                        productPriceElement.textContent = formatNumber(productPrice);
+                        let productPrice = 300000; // 경기 호황 시 300,000원으로 증가
+                        updateTeamData(team.dataset.team, parseInt(localStorage.getItem(`team${team.dataset.team}-money`)) || 100000, parseInt(localStorage.getItem(`team${team.dataset.team}-carbonCredits`)) || 10, parseInt(localStorage.getItem(`team${team.dataset.team}-carbonEfficiency`)) || 4, productPrice);
                     });
                     lastEvent = "경기 호황입니다! 다음 한 턴 동안, 제품 생산 시 얻는 돈이 200,000원에서 300,000원이 됩니다.";
                     showModal(lastEvent);
@@ -362,27 +355,36 @@ document.addEventListener('DOMContentLoaded', () => {
     function removeLastEventEffect() {
         switch (lastEventId) {
             case 2:
-                // 배출효율 높이기 가격 하락 이벤트 해제
                 localStorage.setItem('eventEffect', '');
                 break;
             case 5:
-                // 경기 호황 이벤트 해제
                 teams.forEach((team) => {
-                    let productPrice = parseInt(localStorage.getItem(`team${team.dataset.team}-productPrice`)) || 200000;
-                    productPrice = 200000;
-                    localStorage.setItem(`team${team.dataset.team}-productPrice`, productPrice);
-                    const productPriceElement = team.querySelector('.product-price');
-                    productPriceElement.textContent = formatNumber(productPrice);
+                    let productPrice = 200000; // 경기 호황 해제 시 200,000원으로 복구
+                    updateTeamData(team.dataset.team, parseInt(localStorage.getItem(`team${team.dataset.team}-money`)) || 100000, parseInt(localStorage.getItem(`team${team.dataset.team}-carbonCredits`)) || 10, parseInt(localStorage.getItem(`team${team.dataset.team}-carbonEfficiency`)) || 4, productPrice);
                 });
                 break;
             case 6:
-                // 자연재해 이벤트 해제 (생산 버튼 활성화)
                 teams.forEach((team) => {
                     const produceButton = team.querySelector('.produce');
-                    produceButton.disabled = false;
+                    produceButton.disabled = false; // 자연재해 해제 시 생산 버튼 활성화
                 });
                 break;
             // 다른 이벤트의 영향을 해제하는 로직 추가
         }
     }
 });
+
+const skipButton = document.getElementById('skip-button');
+skipButton.addEventListener('click', skipTurnOrEvent);
+
+function skipTurnOrEvent() {
+    if (eventSection.classList.contains('active')) {
+        // 이벤트 선택을 건너뛰기
+        eventSection.style.display = 'none';
+        eventSection.classList.remove('active');
+        nextTurn();
+    } else {
+        // 현재 팀의 턴을 건너뛰기
+        nextTeam();
+    }
+}
