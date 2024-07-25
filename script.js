@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const carbonCreditsElement = team.querySelector('.carbon-credits');
         const carbonEfficiencyElement = team.querySelector('.carbon-efficiency');
         const transactionForm = team.querySelector('.transaction-form');
+        const submitTransactionButton = team.querySelector('.submit-transaction');
 
         let money = parseInt(localStorage.getItem(`team${teamId}-money`)) || 1000;
         let carbonCredits = parseInt(localStorage.getItem(`team${teamId}-carbonCredits`)) || 10;
@@ -23,39 +24,56 @@ document.addEventListener('DOMContentLoaded', () => {
         carbonCreditsElement.textContent = carbonCredits;
         carbonEfficiencyElement.textContent = carbonEfficiency.toFixed(1);
 
-        team.querySelector('.produce').addEventListener('click', () => {
+        const addClickEffect = (button) => {
+            button.addEventListener('click', () => {
+                button.classList.add('clicked');
+                setTimeout(() => {
+                    button.classList.remove('clicked');
+                }, 150);
+            });
+        };
+
+        const produceButton = team.querySelector('.produce');
+        const improveEfficiencyButton = team.querySelector('.improve-efficiency');
+        const buyCarbonCreditsButton = team.querySelector('.buy-carbon-credits');
+        const sellCarbonCreditsButton = team.querySelector('.sell-carbon-credits');
+
+        addClickEffect(produceButton);
+        addClickEffect(improveEfficiencyButton);
+        addClickEffect(buyCarbonCreditsButton);
+        addClickEffect(sellCarbonCreditsButton);
+
+        produceButton.addEventListener('click', () => {
             if (carbonCredits >= 1 * carbonEfficiency) {
                 carbonCredits -= 1 * carbonEfficiency;
                 money += 1000;
                 updateTeamData(teamId, money, carbonCredits, carbonEfficiency);
                 nextTeam();
             } else {
-                alert("Not enough carbon credits to produce!");
+                alert("온실가스 배출권이 부족해요!");
             }
         });
 
-        team.querySelector('.improve-efficiency').addEventListener('click', () => {
+        improveEfficiencyButton.addEventListener('click', () => {
             if (money >= 500) {
                 money -= 500;
                 carbonEfficiency = Math.max(0.1, carbonEfficiency - 0.1);
                 updateTeamData(teamId, money, carbonCredits, carbonEfficiency);
                 nextTeam();
             } else {
-                alert("Not enough money to improve efficiency!");
+                alert("돈이 부족해요!");
             }
         });
 
-        team.querySelector('.buy-carbon-credits').addEventListener('click', () => {
-            transactionForm.style.display = 'block';
-            transactionForm.dataset.action = 'buy';
+        buyCarbonCreditsButton.addEventListener('click', () => {
+            toggleTransactionForm(transactionForm, submitTransactionButton, 'buy');
         });
 
-        team.querySelector('.sell-carbon-credits').addEventListener('click', () => {
-            transactionForm.style.display = 'block';
-            transactionForm.dataset.action = 'sell';
+        sellCarbonCreditsButton.addEventListener('click', () => {
+            toggleTransactionForm(transactionForm, submitTransactionButton, 'sell');
         });
 
-        team.querySelector('.submit-transaction').addEventListener('click', () => {
+        submitTransactionButton.addEventListener('click', () => {
             const amount = parseInt(team.querySelector('.carbon-credits-amount').value);
             const price = parseInt(team.querySelector('.carbon-credits-price').value);
             const action = transactionForm.dataset.action;
@@ -69,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         updateTeamData(teamId, money, carbonCredits, carbonEfficiency);
                         nextTeam();
                     } else {
-                        alert("Not enough money to buy carbon credits!");
+                        alert("돈이 부족해요!");
                     }
                 } else if (action === 'sell') {
                     if (carbonCredits >= amount) {
@@ -77,12 +95,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         carbonCredits -= amount;
                         updateTeamData(teamId, money, carbonCredits, carbonEfficiency);
                     } else {
-                        alert("Not enough carbon credits to sell!");
+                        alert("온실가스 배출권이 부족해요!");
                     }
                 }
                 transactionForm.style.display = 'none';
             } else {
-                alert("Please enter valid numbers for both amount and price.");
+                alert("다시 입력하세요");
             }
         });
 
@@ -97,7 +115,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    function toggleTransactionForm(form, submitButton, action) {
+        if (form.style.display === 'none' || form.style.display === '') {
+            hideAllForms();
+            form.style.display = 'block';
+            form.dataset.action = action;
+            submitButton.textContent = action === 'buy' ? '구매' : '판매';
+        } else {
+            form.style.display = 'none';
+        }
+    }
+
+    function hideAllForms() {
+        const forms = document.querySelectorAll('.transaction-form');
+        forms.forEach(form => form.style.display = 'none');
+    }
+
     function updateTeamButtonsVisibility() {
+        hideAllForms(); // 모든 폼 숨기기
         teams.forEach((team, index) => {
             const buttons = team.querySelectorAll('.action-button');
             buttons.forEach(button => button.style.display = index === currentTeamIndex ? 'inline-block' : 'none');
@@ -121,4 +156,4 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('currentTeamIndex', currentTeamIndex);
         updateTeamButtonsVisibility();
     }
-})
+});
