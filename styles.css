@@ -196,3 +196,7 @@ input[type="number"] {
 #credit-price {
     color: red;
 }
+
+#skip-button{
+    width: 80%
+}

@@ -281,11 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function removeLastEventEffect() {
         // 이벤트 초기화 로직 삭제
-    }});
-
-    const skipButton = document.getElementById('skip-button');
-    skipButton.addEventListener('click', skipTurnOrEvent);
-    
+    }
     function skipTurnOrEvent() {
         if (eventSection.classList.contains('active')) {
             // 이벤트 선택을 건너뛰기
@@ -297,3 +293,4 @@ document.addEventListener('DOMContentLoaded', () => {
             nextTeam();
         }
     }
+}); 
